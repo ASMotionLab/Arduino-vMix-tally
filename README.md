@@ -87,6 +87,7 @@ GREEN means the camera is being previewed (vMix connection is working).
 
 RED means the camera is LIVE (vMix connection is working).
 
+![Tallys in action](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/tallys%20in%20action.gif?raw=true)
 
 ## Things to keep in mind
 
