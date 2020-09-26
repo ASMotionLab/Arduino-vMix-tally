@@ -1,6 +1,14 @@
 /*
   vMix wireless tally
   Copyright 2019 Thomas Mout
+
+  Modified by ASMotionLab on 25/09/2020
+  LED Matrix code removed & adapted for the single neopixel (WS2812b) shield. Will work for any number of neopixels,
+  just change LED_NUM.
+  Added a brightness setting in the struct (1 to 6), 3 is default.
+  Also added the setting into the web setup page
+
+  Added a FACTORY RESET button into the web setup page, to reset settings to default
 */
 
 #include <EEPROM.h>
@@ -8,14 +16,16 @@
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
 #include <Adafruit_GFX.h>
-#include <WEMOS_Matrix_GFX.h>
 #include "FS.h"
+#include <Adafruit_NeoPixel.h>
 
 // Constants
 const int SsidMaxLength = 64;
 const int PassMaxLength = 64;
 const int HostNameMaxLength = 64;
 const int TallyNumberMaxValue = 64;
+const int LEDBrightnessMaxValue = 64;
+
 
 // Settings object
 struct Settings
@@ -24,6 +34,7 @@ struct Settings
   char pass[PassMaxLength];
   char hostName[HostNameMaxLength];
   int tallyNumber;
+  int ledBrightness;
 };
 
 // Default settings object
@@ -31,7 +42,8 @@ Settings defaultSettings = {
   "ssid default",
   "pass default",
   "hostname default",
-  1
+  1,
+  3
 };
 
 Settings settings;
@@ -46,20 +58,11 @@ char apPass[64];
 // vMix settings
 int port = 8099;
 
-// LED settings
-MLED matrix(4);
-
 // Tally info
 char currentState = -1;
 const char tallyStateOff = 0;
 const char tallyStateProgram = 1;
 const char tallyStatePreview = 2;
-
-// LED characters
-static const uint8_t PROGMEM C[] = {B00000000, B01111110, B11111111, B10000001, B10000001, B11000011, B01000010, B00000000};
-static const uint8_t PROGMEM L[] = {B00000000, B11111111, B11111111, B11000000, B11000000, B11000000, B11000000, B00000000};
-static const uint8_t PROGMEM P[] = {B00000000, B11111111, B11111111, B00010001, B00010001, B00011111, B00001110, B00000000};
-static const uint8_t PROGMEM S[] = {B00000000, B01001100, B11011110, B10010010, B10010010, B11110110, B01100100, B00000000};
 
 // The WiFi client
 WiFiClient client;
@@ -69,6 +72,11 @@ int delayTime = 10000;
 // Time measure
 int interval = 5000;
 unsigned long lastCheck = 0;
+
+// Neopixel WS2812b settings
+#define NEOPIXEL_PIN   D2
+#define LED_NUM 1
+Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_NUM, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 // Load settings from EEPROM
 void loadSettings()
@@ -98,7 +106,12 @@ void loadSettings()
 
   settings.tallyNumber = EEPROM.read(ptr);
 
-  if (strlen(settings.ssid) == 0 || strlen(settings.pass) == 0 || strlen(settings.hostName) == 0 || settings.tallyNumber == 0)
+  ptr++;
+
+  settings.ledBrightness = EEPROM.read(ptr);
+
+
+  if (strlen(settings.ssid) == 0 || strlen(settings.pass) == 0 || strlen(settings.hostName) == 0 || settings.tallyNumber == 0 || settings.ledBrightness == 0)
   {
     Serial.println("No settings found");
     Serial.println("Loading default settings");
@@ -112,6 +125,8 @@ void loadSettings()
     printSettings();
     Serial.println("------------");
   }
+  
+  ledSetIntensity(settings.ledBrightness);
 }
 
 // Save settings to EEPROM
@@ -147,11 +162,17 @@ void saveSettings()
 
   EEPROM.write(ptr, settings.tallyNumber);
 
+  ptr++;
+
+  EEPROM.write(ptr, settings.ledBrightness);
+
   EEPROM.commit();
 
   Serial.println("Settings saved");
   printSettings();
   Serial.println("------------");
+
+  ledSetIntensity(settings.ledBrightness);
 }
 
 // Print settings
@@ -166,55 +187,47 @@ void printSettings()
   Serial.println(settings.hostName);
   Serial.print("Tally number: ");
   Serial.println(settings.tallyNumber);
+  Serial.print("LED brightness: ");
+  Serial.println(settings.ledBrightness);
+  
 }
 
-// Set led intensity from 0 to 7
+// Set led intensity from 1 to 6
 void ledSetIntensity(int intensity)
 {
-  matrix.intensity = intensity;
+//  matrix.intensity = intensity;
+  leds.setBrightness(map(intensity,1,6,20,255));
+  
 }
 
 // Set LED's off
 void ledSetOff()
 {
-  matrix.clear();
-  matrix.writeDisplay();
+  led_set(0, 0, 0);//red
 }
 
 // Draw L(ive) with LED's
 void ledSetProgram()
 {
-  matrix.clear();
-  matrix.drawBitmap(0, 0, L, 8, 8, LED_ON);
-  ledSetIntensity(7);
-  matrix.writeDisplay();
+  led_set(255, 0, 0);//red
 }
 
 // Draw P(review) with LED's
 void ledSetPreview()
 {
-  matrix.clear();
-  matrix.drawBitmap(0, 0, P, 8, 8, LED_ON);
-  ledSetIntensity(2);
-  matrix.writeDisplay();
+  led_set(0, 255, 0);//green
 }
 
 // Draw C(onnecting) with LED's
 void ledSetConnecting()
 {
-  matrix.clear();
-  matrix.drawBitmap(0, 0, C, 8, 8, LED_ON);
-  ledSetIntensity(7);
-  matrix.writeDisplay();
+  led_set(0, 0, 255);//blue
 }
 
 // Draw S(ettings) with LED's
 void ledSetSettings()
 {
-  matrix.clear();
-  matrix.drawBitmap(0, 0, S, 8, 8, LED_ON);
-  ledSetIntensity(7);
-  matrix.writeDisplay();
+  ;
 }
 
 // Set tally to off
@@ -318,7 +331,8 @@ void rootPageHandler()
   response_message += "<meta charset='utf-8'>";
   response_message += "<link rel='icon' type='image/x-icon' href='favicon.ico'>";
   response_message += "<link rel='stylesheet' href='styles.css'>";
-  response_message += "<style>body {width: 100%;height: 100%;padding: 25px;}</style>";
+  response_message += "<style>body {width: 100%;height: 100%;padding: 25px;}";
+  response_message += ".button {display: inline-block;background-color: #FF0000;border: none;color: white;padding: 5px 5px;text-decoration: none;margin: 0px auto 10px;cursor: pointer;border-radius: 2px;}</style>";
   response_message += "</head>";
 
   response_message += "<body class='bg-light'>";
@@ -352,6 +366,12 @@ void rootPageHandler()
   response_message += "<label for='inputnumber' class='col-sm-4 col-form-label'>Input number (1-1000)</label>";
   response_message += "<div class='col-sm-8'>";
   response_message += "<input id='inputnumber' class='form-control' type='number' size='64' min='0' max='1000' name='inputnumber' value='" + String(settings.tallyNumber) + "'>";
+  response_message += "</div></div>";
+
+  response_message += "<div class='form-group row'>";
+  response_message += "<label for='inputnumber2' class='col-sm-4 col-form-label'>LED brightness (1-6, 6 is max brightness)</label>";
+  response_message += "<div class='col-sm-8'>";
+  response_message += "<input id='inputnumber2' class='form-control' type='number' size='64' min='1' max='6' name='inputnumber2' value='" + String(settings.ledBrightness) + "'>";
   response_message += "</div></div>";
 
   response_message += "<input type='submit' value='SAVE' class='btn btn-primary'></form>";
@@ -388,6 +408,15 @@ void rootPageHandler()
     response_message += "<tr><th>AP</th><td>Inactive</td></tr>";
   }
   response_message += "</tbody></table>";
+  
+  response_message += "<div class='col-md-6'>";
+     
+  response_message += "<br>";
+
+  response_message += "<a class=\"button button-factoryreset\" href=\"/factoryreset\">FACTORY RESET</a>";
+  
+  response_message += "</div>";
+  
   response_message += "</div>";
   response_message += "</div>";
 
@@ -442,10 +471,29 @@ void handleSave()
     }
   }
 
+  if (httpServer.hasArg("inputnumber2"))
+  {
+    if (httpServer.arg("inputnumber2").toInt() > 0 and httpServer.arg("inputnumber2").toInt() <= LEDBrightnessMaxValue)
+    {
+      settings.ledBrightness = httpServer.arg("inputnumber2").toInt();
+      doRestart = true;
+    }
+  }
+
   if (doRestart == true)
   {
     restart();
   }
+}
+
+void handlerFactoryReset()
+{
+  bool doRestart = false;
+
+  httpServer.sendHeader("Location", String("/"), true);
+  httpServer.send(302, "text/plain", "Redirected to: /");
+  
+  clearEeprom();
 }
 
 // Connect to WiFi
@@ -560,14 +608,29 @@ void start()
   }
 }
 
+void led_set(uint8 R, uint8 G, uint8 B) 
+{
+  for (int i = 0; i < LED_NUM; i++) 
+  {
+    leds.setPixelColor(i, leds.Color(R, G, B));
+    leds.show();
+  }
+}
+
 void setup()
 {
   Serial.begin(9600);
   EEPROM.begin(512);
+
+  delay(10);
+  
   SPIFFS.begin();
+
+  leds.begin(); // This initializes the NeoPixel library.
 
   httpServer.on("/", HTTP_GET, rootPageHandler);
   httpServer.on("/save", HTTP_POST, handleSave);
+  httpServer.on("/factoryreset", handlerFactoryReset);
   httpServer.serveStatic("/", SPIFFS, "/", "max-age=315360000");
   httpServer.begin();
 
@@ -581,11 +644,11 @@ void loop()
   while (client.available())
   {
     String data = client.readStringUntil('\r\n');
-    handleData(data);
+    handleData(data);   
   }
 
   if (!client.connected() && !apEnabled && millis() > lastCheck + interval)
-  {
+  {   
     tallySetConnecting();
 
     client.stop();
@@ -593,4 +656,13 @@ void loop()
     connectTovMix();
     lastCheck = millis();
   }
+}
+
+void clearEeprom() {
+  Serial.println("Clearing EEPROM");
+
+  settings = defaultSettings;
+  saveSettings();
+  
+  restart();
 }
