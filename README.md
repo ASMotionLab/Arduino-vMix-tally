@@ -1,34 +1,46 @@
 # Arduino vMix tally
 
 This project contains the firmware for a tally system based on an Arduino esp8266 and the vMix TCP API. 
-Pictures of the tally can be found in the Pictures folder.  
+Pictures of the tally can be found in the Pictures folder.
+
+This fork adapts the existing project by Thomas Mout to work with a single WS2812B (Neopixel) led shield instead of the original LED matrix shield. Multiple WS2812B leds will also work.
+
+There are modifications to change LED brightness from the setup web page, and a factory reset button to load defaults.
+
+The enclosure has also been redesigned to fit the dev board + shield, to retain it, to allow mounting to a 1/4 tripod screw via a 3/8 adaptor boss.
 
 ## Installation
 
 ### Hardware
 
-For this project two pieces of hardware are needed.  
-The first is a [WeMos® D1 Mini V2](https://www.banggood.com/WeMos-D1-Mini-V2-NodeMcu-4M-Bytes-Lua-WIFI-Internet-Of-Things-Development-Board-Based-ESP8266-p-1115398.html) and the second is a [Wemos® Matrix LED Shield V1.0.0](https://www.banggood.com/Wemos-Matrix-LED-Shield-V1_0_0-For-WEMOS-D1-Mini-p-1196300.html).  
-Additionally a 3D printed case can be used to protect the hardware. A design for this can be found in the Case folder of this repository.  
+This fork uses a WeMos/Lolin D1 Mini clone
+https://www.banggood.com/Geekcreit-D1-mini-V2_2_0-WIFI-Internet-Development-Board-Based-ESP8266-4MB-FLASH-ESP-12S-Chip-p-1143874.html
+and a WS2812B (Neopixel) shield.
+https://www.amazon.co.uk/ILS-WS2812B-RGB-Shield-Mini/dp/B079128452
+
+The 2 are soldered together, leaving clearance the thickness of a stanley blade between the D1 mini and the shield.
+
+The 3d printable enclosure is designed to retain this board sandwich with a tight tolerance.
+
+The 'lens' used to diffuse the led is a 2cm diameter frosted acrylic circle (3mm thickness). It should press into the case if your printer is accurately calibrated.
 
 #### Solder instructions
 
-* Make sure you use the connector that comes with the WEMOS. <img src="/Pictures/Connectors.jpg" alt="Connectors" width="50">
-* Solder the short site on the WEMOS.  
-* Position the LED Display on the connector you just soldered on the WEMOS with just over 1 – 1,5-millimeter space between the boards. <img src="/Pictures/SolderExample.jpg" alt="Solder example" width="50">
-* Depending on the USB cable you use you may need to widen up the hole for the connector in the case with a file.  
-* Click the assembly in the case.  
+Make sure to match the board orientation when soldering the D1 and shield - make sure 3v3 goes to 3v3, 5v to 5v, etc etc.
 
 ### Software
 
 #### 1. Install Arduino IDE
 
 Download the Arduino IDE from the [Arduino website](https://www.arduino.cc/en/main/software) and install it.  
-After the installation is complete go to File > Preferences and add http://arduino.esp8266.com/stable/package_esp8266com_index.json to the additional Board Manager URL. Go to Tools > Board > Board Manager, search for *esp8266* and install the latest version. After the installation go to Tools > Board and select *Wemos D1 R2* as your default board.  
+After the installation is complete go to File > Preferences and add http://arduino.esp8266.com/stable/package_esp8266com_index.json to the additional Board Manager URL.
+Go to Tools > Board > Board Manager, search for *esp8266* and install the latest version.
+After the installation go to Tools > Board and select *Wemos D1 R2* as your default board.  
 
 #### 2. Copy libraries
 
-All libraries included in the Libaries folder are required for this project. Please copy them to your own Arduino libraries folder (default path: *user/documents/Arduino/libraries*).  
+All libraries included in the Libaries folder are required for this project. Please copy them to your own Arduino libraries folder (default path: *user/documents/Arduino/libraries*).
+If some components are missing, you can easily find what's missing by googling the error.
 
 #### 3. Uploading static files
 
@@ -37,55 +49,42 @@ The static files in the Arduino-vMix-Tally/data folder must be uploaded using th
 
 #### 4. Uploading firmware
 
-Upload the Arduino-vMix-Tally/Arduino-vMix-Tally.ino from this repository to the Arduino by pressing the Upload button. After the upload the tally will restart in Connecting mode (see the Muliple states section).  
+Upload the Arduino-vMix-Tally/Arduino-vMix-Tally.ino from this repository to the D1 mini
 
-## Getting Started
+#### 5. Connecting to your wireless network
 
-### Multiple states
+To start with, the tally will try to connect to a non existent wifi network and will fail. After it fails, it becomes a wifi access point.
+You can connect directly to it. It'll be called "vMix_Tally_X" where X is a number. The WiFi password is the same name, with "_access" added to the end._
+So If the Access Point name is vMix_Tally_255, the password will be vMix_Tally_255_access.
 
-There are three states in which a tally can find itself.  
+Once you connect to it, navigate to address 192.168.4.1 in the browser and enter the details of your wifi network, the ip address of the vMix machine, which tally number it is and the LED brightness you want.
 
-#### 1. Connecting
+Hit Save. Tally restarts.
 
-| Symbol | Meaning      | Led intensity | Example                                               |
-|--------|--------------|---------------|-------------------------------------------------------|
-| C      | Connecting   | 100%          |<img src="/Pictures/Connecting.jpg" alt="C" width="50">|
+#### 5. Connecting to vMix
 
-In this state the tally is trying to connect to WiFi and vMix based on the settings.  
+If all the details are right and vMix is running, it should light up blue and after 5-30s either turn off, go green or red.
+vMix API runs on port 8099, so this port needs to be reachable by the tally - make sure firewall isn't blocking it.
 
-#### 2. Access point
+#### 6. Colours
 
-| Symbol | Meaning      | Led intensity | Example                                               |
-|--------|--------------|---------------|-------------------------------------------------------|
-| S      | Settings     | 100%          |<img src="/Pictures/AP%20mode.jpg" alt="S" width="50"> |
+BLUE light indicates the tally is trying to connect to a network, or it's an Access Point of it's own.
 
-In this state the tally was unable to connect to WiFi and it turned itself to access point mode. It can be accessed by connecting to the WiFi network with the SSID *vMix_Tally_#* (# is the tally number) and password *vMix_Tally_#_access* (# is the tally number). Once connected the settings can be changed by going to the webpage on IP address 192.168.4.1.  
+OFF means the camera is not being previewed and it's not live (but vMix connection is working).
 
-#### 3. Tally
+GREEN means the camera is being previewed (vMix connection is working).
 
-| Symbol | Meaning      | Led intensity | Example                                                    |
-|--------|--------------|---------------|------------------------------------------------------------|
-| P      | Preview      | 28.5%         |<img src="/Pictures/Tally%20preview.jpg" alt="P" width="50">|
-| L      | Live/program | 100%          |<img src="/Pictures/Tally%20live.jpg" alt="L" width="50">   |
-| *None* | Off          | na            |<img src="/Pictures/Tally%20off.jpg" alt="Off" width="50">  |
-
-In this state the tally is connected to WiFi and vMix. It detects new tally states and shows them using the led matrix.  
-
-### Settings
-
-Network and tally settings can be edited on the built-in webpage. To access the webpage connect to the same WiFi network and navigate to the IP address or the devicename(*vmix_tally_#.home*, # is the tally number) in a browser.  
-On this webpage the WiFi SSID, WiFi password, vMix hostname and tally number can be changed. It also shows some basic information of the device.  
+RED means the camera is LIVE (vMix connection is working).
 
 ## Things to keep in mind
 
 1. Make sure to use a power cable that does not support data when using a USB port on a camera. This can cause connecting issues in the camera.  
-2. The Arduino is completely dependent on a good WiFi signal.  
-3. The tally must be connected to the same network as the vMix instance.  
-4. The LED matrix can only display in red. The difference in color in the pictures above is due to a difference in LED intensity. 
+2. The D1 mini is completely dependent on a good WiFi signal.  
+3. The tally must be connected to the same network as the vMix instance.
+4. If you're having trouble setting up the tally, open a serial monitor with baud 9600 on the tally's COM port it will give you information about what it's doing.
 
 ## Footnote
 
 Please note all images are for illustration purpose. Actual results may vary.  
 Feel free open issues on this repository for bugs or feature requests.  
 If you want to create your own version of this repository then a reference is appreciated.  
-Special thanks to André for the 3D casing and the solder instructions.  
