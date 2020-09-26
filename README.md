@@ -1,5 +1,7 @@
 # Arduino vMix tally
 
+![Image of Tally](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/P1070468crop.jpg)
+
 This project contains the firmware for a tally system based on an Arduino esp8266 and the vMix TCP API. 
 Pictures of the tally can be found in the Pictures folder.
 
@@ -13,14 +15,21 @@ The enclosure has also been redesigned to fit the dev board + shield, to retain 
 
 ### Hardware
 
+![Image of shield](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/P1070473crop.jpg)
+
 This fork uses a WeMos/Lolin D1 Mini clone
 https://www.banggood.com/Geekcreit-D1-mini-V2_2_0-WIFI-Internet-Development-Board-Based-ESP8266-4MB-FLASH-ESP-12S-Chip-p-1143874.html
+
 and a WS2812B (Neopixel) shield.
 https://www.amazon.co.uk/ILS-WS2812B-RGB-Shield-Mini/dp/B079128452
 
 The 2 are soldered together, leaving clearance the thickness of a stanley blade between the D1 mini and the shield.
 
+![Image of clearance](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/P1070474crop.jpg)
+
 The 3d printable enclosure is designed to retain this board sandwich with a tight tolerance.
+
+![Image of retention](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/P1070472.jpg)
 
 The 'lens' used to diffuse the led is a 2cm diameter frosted acrylic circle (3mm thickness). It should press into the case if your printer is accurately calibrated.
 
@@ -59,6 +68,8 @@ So If the Access Point name is vMix_Tally_255, the password will be vMix_Tally_2
 
 Once you connect to it, navigate to address 192.168.4.1 in the browser and enter the details of your wifi network, the ip address of the vMix machine, which tally number it is and the LED brightness you want.
 
+![Image of ap setup](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/vMix%20Tally%20NeoPixel%20setup%20page%20_01.PNG)
+
 Hit Save. Tally restarts.
 
 #### 5. Connecting to vMix
@@ -75,6 +86,7 @@ OFF means the camera is not being previewed and it's not live (but vMix connecti
 GREEN means the camera is being previewed (vMix connection is working).
 
 RED means the camera is LIVE (vMix connection is working).
+
 
 ## Things to keep in mind
 
