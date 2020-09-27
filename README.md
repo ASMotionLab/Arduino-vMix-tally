@@ -73,7 +73,7 @@ Once you connect to it, navigate to address 192.168.4.1 in the browser.
 You may find that there are strange characters in the entry fields. This is because the memory locations where this data are stored on the D1 may not be clear.
 You can do a factory reset and come back to the page, or just delete all the strangeness and set up the field to suit your network.
 
-![Image of ap setup](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/vMix%20Tally%20NeoPixel%20setup%20page%20_01.jpg)
+![Image of ap setup](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/vMix%20Tally%20NeoPixel%20setup%20page%20_01.jpg?raw=true)
 
 Hit Save. Tally restarts.
 
