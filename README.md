@@ -8,6 +8,7 @@ Pictures of the tally can be found in the Pictures folder.
 This fork adapts the existing project by Thomas Mout to work with a single WS2812B (Neopixel) led shield instead of the original LED matrix shield. Multiple WS2812B leds will also work.
 
 There are modifications to change LED brightness from the setup web page, and a factory reset button to load defaults.
+
 Also added is a checkbox for enabling/disabling the green colour (the Preview colour of vMix).
 This indicator may not be wanted if pointing tallys at the talent.
 
