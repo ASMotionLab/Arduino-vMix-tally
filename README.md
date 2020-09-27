@@ -69,7 +69,9 @@ To start with, the tally will try to connect to a non existent wifi network and 
 You can connect directly to it. It'll be called "vMix_Tally_X" where X is a number. The WiFi password is the same name, with "_access" added to the end._
 So If the Access Point name is vMix_Tally_255, the password will be vMix_Tally_255_access.
 
-Once you connect to it, navigate to address 192.168.4.1 in the browser and enter the details of your wifi network, the ip address of the vMix machine, which tally number it is and the LED brightness you want.
+Once you connect to it, navigate to address 192.168.4.1 in the browser.
+You may find that there are strange characters in the entry fields. This is because the memory locations where this data are stored on the D1 may not be clear.
+You can do a factory reset and come back to the page, or just delete all the strangeness and set up the field to suit your network.
 
 ![Image of ap setup](https://github.com/ASMotionLab/Arduino-vMix-tally/blob/master/Pictures/vMix%20Tally%20NeoPixel%20setup%20page%20_01.PNG)
 
