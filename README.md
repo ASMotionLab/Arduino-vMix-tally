@@ -9,6 +9,9 @@ This fork adapts the existing project by Thomas Mout to work with a single WS281
 
 There are modifications to change LED brightness from the setup web page, and a factory reset button to load defaults.
 
+Also added is a checkbox for enabling/disabling the green colour (the Preview colour of vMix).
+This indicator may not be wanted if pointing tallys at the talent.
+
 The enclosure has also been redesigned to fit the dev board + shield, to retain it, to allow mounting to a 1/4 tripod screw via a 3/8 adaptor boss.
 
 ## Installation
