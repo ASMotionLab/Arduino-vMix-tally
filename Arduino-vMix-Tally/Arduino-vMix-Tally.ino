@@ -9,6 +9,10 @@
   Also added the setting into the web setup page
 
   Added a FACTORY RESET button into the web setup page, to reset settings to default
+  
+  27-09-2020 Update:
+  Added a checkbox into the settings page, to enable/disable the green (vMix preview) led.
+  For example you may want to disable it when pointing tallys at the talent, where green (vMix preview) is not wanted.
 */
 
 #include <EEPROM.h>
@@ -24,7 +28,7 @@ const int SsidMaxLength = 64;
 const int PassMaxLength = 64;
 const int HostNameMaxLength = 64;
 const int TallyNumberMaxValue = 64;
-const int LEDBrightnessMaxValue = 64;
+const int LEDBrightnessMaxValue = 6;
 
 
 // Settings object
@@ -35,6 +39,7 @@ struct Settings
   char hostName[HostNameMaxLength];
   int tallyNumber;
   int ledBrightness;
+  bool greenEnabled;
 };
 
 // Default settings object
@@ -43,7 +48,8 @@ Settings defaultSettings = {
   "pass default",
   "hostname default",
   1,
-  3
+  3,
+  1
 };
 
 Settings settings;
@@ -110,6 +116,9 @@ void loadSettings()
 
   settings.ledBrightness = EEPROM.read(ptr);
 
+  ptr++;
+
+  settings.greenEnabled = EEPROM.read(ptr);
 
   if (strlen(settings.ssid) == 0 || strlen(settings.pass) == 0 || strlen(settings.hostName) == 0 || settings.tallyNumber == 0 || settings.ledBrightness == 0)
   {
@@ -166,6 +175,10 @@ void saveSettings()
 
   EEPROM.write(ptr, settings.ledBrightness);
 
+  ptr++;
+
+  EEPROM.write(ptr, settings.greenEnabled);
+
   EEPROM.commit();
 
   Serial.println("Settings saved");
@@ -189,6 +202,8 @@ void printSettings()
   Serial.println(settings.tallyNumber);
   Serial.print("LED brightness: ");
   Serial.println(settings.ledBrightness);
+  Serial.print("Green enabled: ");
+  Serial.println(settings.greenEnabled);
   
 }
 
@@ -209,13 +224,17 @@ void ledSetOff()
 // Draw L(ive) with LED's
 void ledSetProgram()
 {
-  led_set(255, 0, 0);//red
+  led_set(255, 0, 0);//off
 }
 
 // Draw P(review) with LED's
 void ledSetPreview()
 {
-  led_set(0, 255, 0);//green
+  if (settings.greenEnabled) {
+    led_set(0, 255, 0);//green
+  } else {
+    led_set(0, 0, 0);//off
+  }
 }
 
 // Draw C(onnecting) with LED's
@@ -367,11 +386,24 @@ void rootPageHandler()
   response_message += "<div class='col-sm-8'>";
   response_message += "<input id='inputnumber' class='form-control' type='number' size='64' min='0' max='1000' name='inputnumber' value='" + String(settings.tallyNumber) + "'>";
   response_message += "</div></div>";
-
+  
   response_message += "<div class='form-group row'>";
   response_message += "<label for='inputnumber2' class='col-sm-4 col-form-label'>LED brightness (1-6, 6 is max brightness)</label>";
+  
   response_message += "<div class='col-sm-8'>";
   response_message += "<input id='inputnumber2' class='form-control' type='number' size='64' min='1' max='6' name='inputnumber2' value='" + String(settings.ledBrightness) + "'>";
+  response_message += "</div></div>";
+
+  response_message += "<div class='form-group row'>";
+  response_message += "<label for='checkbox1' class='col-sm-4 col-form-label'>Green enabled? (Disable if pointing tally at talent.)</label>";
+
+  response_message += "<div class='col-sm-8'>";
+  if (settings.greenEnabled) {
+    response_message += "<input id='checkbox1' class='form-control' type='checkbox' name='checkbox1' checked value='" + String(settings.greenEnabled) + "'>";
+  } else {
+    response_message += "<input id='checkbox1' class='form-control' type='checkbox' name='checkbox1' value='" + String(settings.greenEnabled) + "'>";
+  }
+
   response_message += "</div></div>";
 
   response_message += "<input type='submit' value='SAVE' class='btn btn-primary'></form>";
@@ -478,6 +510,15 @@ void handleSave()
       settings.ledBrightness = httpServer.arg("inputnumber2").toInt();
       doRestart = true;
     }
+  }
+
+  if (httpServer.hasArg("checkbox1"))
+  {
+      settings.greenEnabled = true;
+      doRestart = true;
+  } else {
+      settings.greenEnabled = false;
+      doRestart = true;
   }
 
   if (doRestart == true)
